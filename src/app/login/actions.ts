@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { isAuthRetryableFetchError } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 
 export type LoginState = { error: string | null; email: string };
@@ -20,7 +21,17 @@ export async function signIn(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    return { error: "Fel e-post eller lösenord.", email };
+    if (error.code === "invalid_credentials") {
+      return { error: "Fel e-post eller lösenord.", email };
+    }
+    if (isAuthRetryableFetchError(error)) {
+      return {
+        error: "Kunde inte nå servern. Kontrollera anslutningen och försök igen.",
+        email,
+      };
+    }
+    console.error("Inloggning misslyckades:", error);
+    return { error: "Något gick fel vid inloggningen. Försök igen.", email };
   }
 
   redirect("/");
