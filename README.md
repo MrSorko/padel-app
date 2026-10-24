@@ -58,10 +58,18 @@ PGHOST=localhost PGUSER=postgres supabase/tests/run_local.sh
 
 Inga schemaändringar behövs för fas 3.
 
+## Statistik och historik (fas 4)
+
+- **Statistik** (`/stats`): alla spelare med spelade matcher, vinstprocent, poäng per match och snittplacering. Listan sorteras på vinstprocent, sedan snittplacering och sedan totala poäng.
+- **Spelarsidan** (`/stats/<id>`): vunna, oavgjorda och förlorade matcher, vinstprocent, totala och genomsnittliga poäng, antal sessioner, antal gånger på plats 1–4, snittplacering, resultat med varje partner (flest vinster först) och spelarens tidigare sessioner.
+- **Historik** (`/history`): alla avslutade sessioner med placering och poäng per spelare. Tryck på en session för att se matcherna.
+
+Bara avslutade sessioner räknas, så statistiken ändras inte mitt under en kväll. Statistiken räknas fram i appen ur `matches` och `session_players` (`final_position`) och lagras inte separat. Inga schemaändringar behövs för fas 4.
+
 ## Tester
 
 ```bash
 npm test
 ```
 
-Enhetstesterna för rotation, poänginmatning och placering ligger i `src/lib/americano.test.ts`.
+Enhetstesterna för rotation, poänginmatning och placering ligger i `src/lib/americano.test.ts`, och för statistiken i `src/lib/stats.test.ts`.

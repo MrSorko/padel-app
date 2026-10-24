@@ -71,6 +71,7 @@ En privat webbapp (PWA) för fyra vänner som spelar padel Americano. Den använ
 3. Starta session, rotationsschema, poänginmatning, live-tabell och avsluta session
 4. Statistiksida och historik
 5. PWA (manifest, ikoner) och deploy till Vercel
+6. Design och användarvänlighet: finare utseende och smidigare flöden, utifrån hur appen fungerar i verkligheten
 
 ## Next.js-version
 Se AGENTS.md: projektet kör Next.js 16 (t.ex. heter middleware nu `proxy.ts`). Läs dokumentationen i `node_modules/next/dist/docs/` innan du skriver Next-kod.
