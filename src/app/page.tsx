@@ -78,6 +78,21 @@ async function Sessions() {
         Starta ny session
       </Link>
 
+      <nav className="mt-3 grid grid-cols-2 gap-3">
+        <Link
+          href="/stats"
+          className="rounded-lg border border-zinc-300 px-4 py-3 text-center text-base font-semibold active:bg-zinc-100 dark:border-zinc-700 dark:active:bg-zinc-800"
+        >
+          Statistik
+        </Link>
+        <Link
+          href="/history"
+          className="rounded-lg border border-zinc-300 px-4 py-3 text-center text-base font-semibold active:bg-zinc-100 dark:border-zinc-700 dark:active:bg-zinc-800"
+        >
+          Historik
+        </Link>
+      </nav>
+
       {finished.length > 0 && (
         <section className="mt-10">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
