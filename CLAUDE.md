@@ -9,7 +9,7 @@ En privat webbapp (PWA) för fyra vänner som spelar padel Americano. Den använ
 
 ## Begrepp (viktigt – använd dessa konsekvent i kod och UI)
 - **Match** ("game"): en match 2 mot 2 där lagens poäng alltid blir **24 totalt** (t.ex. 15–9). Laget med flest poäng vinner. 12–12 räknas som oavgjort.
-- **Session** ("runda"/spelkväll): flera matcher i följd tills någon avslutar sessionen manuellt. När den avslutas får varje spelare en placering (1–4).
+- **Session** ("runda"/spelkväll): flera matcher i följd tills någon avslutar sessionen manuellt. När den avslutas får varje spelare en placering (1–4). I UI heter den alltid **spelkväll**, i kod och databas `session`.
 - **Spelarpoäng**: varje spelare får de poäng hennes eller hans lag tog i matchen. Om laget vann med 15–9 får båda spelarna 15 poäng.
 
 ## Americano-regler (4 spelare: A, B, C, D)

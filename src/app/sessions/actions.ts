@@ -14,7 +14,7 @@ const OK: ActionState = { error: null };
 
 function dbError(error: PostgrestError, what: string): ActionState {
   if (error.code === "42501") {
-    return { error: "Du kan bara ändra i pågående sessioner där du spelar." };
+    return { error: "Du kan bara ändra i pågående spelkvällar där du spelar." };
   }
   console.error(`${what} misslyckades:`, error);
   return { error: `${what} misslyckades. Kontrollera anslutningen och försök igen.` };
@@ -43,7 +43,7 @@ export async function startSession(
     .insert({ created_by: userId })
     .select("id")
     .single();
-  if (error) return dbError(error, "Att starta sessionen");
+  if (error) return dbError(error, "Att starta spelkvällen");
 
   // Spelarnas ordning (A–D) slumpas när sessionen startar.
   const slots = assignSlots(playerIds, () => randomInt(0, 2 ** 32) / 2 ** 32);
@@ -71,7 +71,7 @@ export async function recordMatch(
   const session = await loadSession(supabase, sessionId);
   if (!session || session.status !== "active") {
     refresh();
-    return { error: "Sessionen är redan avslutad." };
+    return { error: "Spelkvällen är redan avslutad." };
   }
   // Skyddar mot att två telefoner registrerar samma match samtidigt.
   if (session.nextMatch.matchNumber !== matchNumber) {
@@ -120,7 +120,7 @@ export async function updateMatch(
   // RLS filtrerar bort raden i stället för att ge ett fel.
   if (!data?.length) {
     refresh();
-    return { error: "Matchen kunde inte ändras. Sessionen kan vara avslutad." };
+    return { error: "Matchen kunde inte ändras. Spelkvällen kan vara avslutad." };
   }
 
   refresh();
@@ -135,7 +135,7 @@ export async function deleteLastMatch(
   const session = await loadSession(supabase, sessionId);
   if (!session || session.status !== "active" || session.matches.at(-1)?.id !== matchId) {
     refresh();
-    return { error: "Bara den senaste matchen i en pågående session kan tas bort." };
+    return { error: "Bara den senaste matchen i en pågående spelkväll kan tas bort." };
   }
 
   const { data, error } = await supabase
@@ -144,7 +144,7 @@ export async function deleteLastMatch(
     .eq("id", matchId)
     .select("id");
   if (error) return dbError(error, "Att ta bort matchen");
-  if (!data?.length) return { error: "Du kan bara ändra i sessioner där du spelar." };
+  if (!data?.length) return { error: "Du kan bara ändra i spelkvällar där du spelar." };
 
   refresh();
   return OK;
@@ -158,7 +158,7 @@ export async function endSession(sessionId: string): Promise<ActionState> {
     return OK;
   }
   if (session.matches.length === 0) {
-    return { error: "Spela minst en match innan sessionen avslutas." };
+    return { error: "Spela minst en match innan spelkvällen avslutas." };
   }
 
   // Placeringar sparas först, eftersom spelarraderna låses när sessionen är avslutad.
@@ -174,7 +174,7 @@ export async function endSession(sessionId: string): Promise<ActionState> {
   );
   for (const { data, error } of results) {
     if (error) return dbError(error, "Att spara placeringarna");
-    if (!data?.length) return { error: "Bara deltagare kan avsluta sessionen." };
+    if (!data?.length) return { error: "Bara deltagare kan avsluta spelkvällen." };
   }
 
   const { data, error } = await supabase
@@ -183,8 +183,8 @@ export async function endSession(sessionId: string): Promise<ActionState> {
     .eq("id", sessionId)
     .eq("status", "active")
     .select("id");
-  if (error) return dbError(error, "Att avsluta sessionen");
-  if (!data?.length) return { error: "Sessionen kunde inte avslutas." };
+  if (error) return dbError(error, "Att avsluta spelkvällen");
+  if (!data?.length) return { error: "Spelkvällen kunde inte avslutas." };
 
   refresh();
   return OK;
@@ -194,14 +194,14 @@ export async function deleteSession(sessionId: string): Promise<ActionState> {
   const { supabase, userId } = await requireUser();
   const session = await loadSession(supabase, sessionId);
   if (!session || session.status !== "active" || session.createdBy !== userId) {
-    return { error: "Bara den som startade sessionen kan ta bort den medan den pågår." };
+    return { error: "Bara den som startade spelkvällen kan ta bort den medan den pågår." };
   }
   if (session.matches.length > 0) {
-    return { error: "Sessionen har matcher. Avsluta den i stället." };
+    return { error: "Spelkvällen har matcher. Avsluta den i stället." };
   }
 
   const { error } = await supabase.from("sessions").delete().eq("id", sessionId);
-  if (error) return dbError(error, "Att ta bort sessionen");
+  if (error) return dbError(error, "Att ta bort spelkvällen");
 
   redirect("/");
 }

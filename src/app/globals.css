@@ -1,25 +1,92 @@
 @import "tailwindcss";
 
+/*
+ * Färger: padelbanans blå (court) och bollens limegröna (ball).
+ * Ytor och text byts mellan ljust och mörkt läge via variablerna nedan,
+ * så att komponenterna bara behöver använda bg-surface, text-muted osv.
+ */
+@theme {
+  --color-court-50: #eef5fc;
+  --color-court-100: #d6e7f7;
+  --color-court-200: #aecdee;
+  --color-court-300: #7aaee2;
+  --color-court-400: #4a8bd2;
+  --color-court-500: #2b6fbf;
+  --color-court-600: #1f58a0;
+  --color-court-700: #1a4682;
+  --color-court-800: #163a69;
+  --color-court-900: #112c50;
+  --color-court-950: #0a1b33;
+
+  --color-ball-200: #f0fbb0;
+  --color-ball-300: #e5f77a;
+  --color-ball-400: #d6ef3d;
+  --color-ball-500: #bcd61e;
+  --color-ball-600: #92a811;
+
+  --color-gold: #f2b705;
+  --color-silver: #a3adb8;
+  --color-bronze: #c97c3d;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #eef2f7;
+  --foreground: #0a1b33;
+  --surface: #ffffff;
+  --surface-2: #e4eaf2;
+  --muted: #5b6b80;
+  --line: #d5dde8;
+  --danger: #d12b2b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #06111f;
+    --foreground: #eaf1fa;
+    --surface: #0e1f35;
+    --surface-2: #16304f;
+    --muted: #93a6bf;
+    --line: #1f3a5c;
+    --danger: #ff7272;
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-danger: var(--danger);
   --font-sans: var(--font-geist-sans);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+/* Öppnas från hemskärmen utan webbläsarens adressfält: undvik notch och hemindikator. */
+.safe-top {
+  padding-top: max(1.5rem, env(safe-area-inset-top));
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+dialog::backdrop {
+  background: rgb(6 17 31 / 0.6);
+  backdrop-filter: blur(2px);
+}
+
+/* Blå "banyta" överst på varje sida, med banans vita linjer som mönster. */
+.court-hero {
+  background:
+    linear-gradient(to right, transparent calc(50% - 1px), rgb(255 255 255 / 0.07) calc(50% - 1px), rgb(255 255 255 / 0.07) calc(50% + 1px), transparent calc(50% + 1px)),
+    linear-gradient(160deg, var(--color-court-700), var(--color-court-900) 70%);
 }

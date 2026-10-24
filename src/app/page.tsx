@@ -1,7 +1,18 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { BallMark, ChevronRightIcon, LogoutIcon, PlusIcon, TrophyIcon } from "@/components/icons";
+import {
+  AppPage,
+  Avatar,
+  buttonStyles,
+  Card,
+  EmptyState,
+  ErrorText,
+  SectionTitle,
+  Skeleton,
+} from "@/components/ui";
 import { requireUser } from "@/lib/sessions";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatDay } from "@/lib/format";
 import { signOut } from "./login/actions";
 
 type SessionListRow = {
@@ -11,144 +22,178 @@ type SessionListRow = {
   session_players: {
     slot: string;
     final_position: number | null;
+    total_points: number | null;
     profiles: { display_name: string } | null;
   }[];
+  matches: { count: number }[];
 };
 
-async function Sessions() {
+async function HomeContent() {
   const { supabase, userId } = await requireUser();
   const [{ data: me }, { data, error }] = await Promise.all([
     supabase.from("profiles").select("display_name").eq("id", userId).maybeSingle(),
     supabase
       .from("sessions")
-      .select("id, status, started_at, session_players(slot, final_position, profiles(display_name))")
+      .select(
+        "id, status, started_at, session_players(slot, final_position, total_points, profiles(display_name)), matches(count)",
+      )
       .order("started_at", { ascending: false })
       .limit(10)
       .overrideTypes<SessionListRow[], { merge: false }>(),
   ]);
 
-  if (error) {
-    return (
-      <p role="alert" className="mt-8 text-red-600 dark:text-red-400">
-        Kunde inte hämta sessionerna. Ladda om sidan och försök igen.
-      </p>
-    );
-  }
+  const firstName = me?.display_name?.split(/\s+/)[0];
 
-  const sessions = data ?? [];
+  return (
+    <AppPage
+      tab="home"
+      eyebrow="Padel Americano"
+      title={firstName ? `Hej ${firstName}!` : "Hej!"}
+      action={<SignOutButton />}
+    >
+      {error ? (
+        <ErrorText>Kunde inte hämta spelkvällarna. Ladda om sidan och försök igen.</ErrorText>
+      ) : (
+        <Sessions sessions={data ?? []} />
+      )}
+    </AppPage>
+  );
+}
+
+function Sessions({ sessions }: { sessions: SessionListRow[] }) {
   const active = sessions.filter((s) => s.status === "active");
   const finished = sessions.filter((s) => s.status === "finished").slice(0, 5);
 
   return (
     <>
-      <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-        Inloggad som{" "}
-        <span className="font-medium text-zinc-900 dark:text-zinc-100">
-          {me?.display_name ?? "okänd"}
-        </span>
-      </p>
-
       {active.length > 0 && (
-        <section className="mt-8">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-            Pågående
-          </h2>
-          <ul className="mt-2 flex flex-col gap-2">
-            {active.map((s) => (
-              <li key={s.id}>
-                <Link
-                  href={`/sessions/${s.id}`}
-                  className="block rounded-xl border-2 border-emerald-600 px-4 py-3 active:bg-emerald-50 dark:active:bg-emerald-950"
-                >
-                  <span className="font-semibold">Startad {formatDate(s.started_at)}</span>
-                  <span className="mt-1 block text-sm text-zinc-600 dark:text-zinc-400">
-                    {playerNames(s)}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+        <section className="flex flex-col gap-3">
+          {active.map((s) => (
+            <ActiveSessionCard key={s.id} session={s} />
+          ))}
         </section>
       )}
 
       <Link
         href="/sessions/new"
-        className="mt-8 rounded-lg bg-emerald-600 px-4 py-3 text-center text-base font-semibold text-white active:bg-emerald-700"
+        className={`${active.length > 0 ? buttonStyles.outline : buttonStyles.primary} ${
+          active.length > 0 ? "mt-3" : ""
+        }`}
       >
-        Starta ny session
+        <PlusIcon className="size-5" />
+        {active.length > 0 ? "Starta en till spelkväll" : "Starta spelkväll"}
       </Link>
 
-      <nav className="mt-3 grid grid-cols-2 gap-3">
-        <Link
-          href="/stats"
-          className="rounded-lg border border-zinc-300 px-4 py-3 text-center text-base font-semibold active:bg-zinc-100 dark:border-zinc-700 dark:active:bg-zinc-800"
-        >
-          Statistik
-        </Link>
-        <Link
-          href="/history"
-          className="rounded-lg border border-zinc-300 px-4 py-3 text-center text-base font-semibold active:bg-zinc-100 dark:border-zinc-700 dark:active:bg-zinc-800"
-        >
-          Historik
-        </Link>
-      </nav>
-
-      {finished.length > 0 && (
-        <section className="mt-10">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-            Senaste sessionerna
-          </h2>
-          <ul className="mt-2 divide-y divide-zinc-200 dark:divide-zinc-800">
+      <section className="mt-8">
+        <SectionTitle aside={finished.length > 0 && <Link href="/history">Visa alla</Link>}>
+          Senaste spelkvällarna
+        </SectionTitle>
+        {finished.length === 0 ? (
+          <EmptyState>Inga avslutade spelkvällar än. Dags att spela!</EmptyState>
+        ) : (
+          <ul className="flex flex-col gap-2">
             {finished.map((s) => (
               <li key={s.id}>
-                <Link href={`/sessions/${s.id}`} className="block py-3">
-                  <span className="font-medium">{formatDate(s.started_at)}</span>
-                  <span className="mt-1 block text-sm text-zinc-600 dark:text-zinc-400">
-                    Vinnare: {winners(s)}
+                <Link
+                  href={`/sessions/${s.id}`}
+                  className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 transition active:bg-surface-2"
+                >
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gold/15 text-gold">
+                    <TrophyIcon className="size-5" />
                   </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold">{winners(s)}</span>
+                    <span className="block text-sm text-muted">
+                      {formatDay(s.started_at)} · {matchCount(s)}
+                    </span>
+                  </span>
+                  <ChevronRightIcon className="size-5 shrink-0 text-muted" />
                 </Link>
               </li>
             ))}
           </ul>
-        </section>
-      )}
+        )}
+      </section>
     </>
   );
 }
 
-function playerNames(s: SessionListRow) {
-  return [...s.session_players]
-    .sort((a, b) => a.slot.localeCompare(b.slot))
-    .map((p) => p.profiles?.display_name ?? "?")
-    .join(", ");
+function ActiveSessionCard({ session }: { session: SessionListRow }) {
+  const players = [...session.session_players].sort((a, b) => a.slot.localeCompare(b.slot));
+  const played = session.matches[0]?.count ?? 0;
+  return (
+    <Link href={`/sessions/${session.id}`} className="block transition active:scale-[0.99]">
+      <Card className="border-2 border-ball-400 p-5">
+        <div className="flex items-center justify-between gap-3">
+          <span className="inline-flex items-center gap-2 rounded-full bg-ball-400 px-3 py-1 text-xs font-bold uppercase tracking-wide text-court-950">
+            <span className="size-2 animate-pulse rounded-full bg-court-950" />
+            Pågår
+          </span>
+          <span className="text-sm text-muted">{formatDate(session.started_at)}</span>
+        </div>
+        <p className="mt-4 text-2xl font-extrabold tracking-tight">
+          {played === 0 ? "Redo för första matchen" : `Match ${played + 1} på gång`}
+        </p>
+        <div className="mt-3 flex items-center gap-2">
+          <div className="flex -space-x-2">
+            {players.map((p, i) => (
+              <Avatar
+                key={i}
+                name={p.profiles?.display_name ?? "?"}
+                className="size-9 text-xs ring-2 ring-surface"
+              />
+            ))}
+          </div>
+          <span className="truncate text-sm text-muted">
+            {players.map((p) => p.profiles?.display_name ?? "?").join(", ")}
+          </span>
+        </div>
+        <span className={`mt-5 w-full ${buttonStyles.secondary}`}>
+          Fortsätt spelkvällen
+          <ChevronRightIcon className="size-5" />
+        </span>
+      </Card>
+    </Link>
+  );
+}
+
+function SignOutButton() {
+  return (
+    <form action={signOut}>
+      <button
+        type="submit"
+        className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-sm font-semibold text-white transition active:bg-white/20"
+      >
+        <LogoutIcon className="size-4" />
+        Logga ut
+      </button>
+    </form>
+  );
+}
+
+function matchCount(s: SessionListRow) {
+  const n = s.matches[0]?.count ?? 0;
+  return `${n} ${n === 1 ? "match" : "matcher"}`;
 }
 
 function winners(s: SessionListRow) {
-  return (
-    s.session_players
-      .filter((p) => p.final_position === 1)
-      .map((p) => p.profiles?.display_name ?? "?")
-      .join(" och ") || "–"
-  );
+  const top = s.session_players.filter((p) => p.final_position === 1);
+  if (top.length === 0) return "–";
+  const names = top.map((p) => p.profiles?.display_name ?? "?").join(" och ");
+  const points = top[0].total_points;
+  return points === null ? names : `${names} vann (${points} p)`;
 }
 
 export default function Home() {
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-6 py-10">
-      <header className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold tracking-tight">Padel Americano</h1>
-        <form action={signOut}>
-          <button
-            type="submit"
-            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium active:bg-zinc-100 dark:border-zinc-700 dark:active:bg-zinc-800"
-          >
-            Logga ut
-          </button>
-        </form>
-      </header>
-      <Suspense fallback={<p className="mt-8 text-zinc-500">Hämtar sessioner…</p>}>
-        <Sessions />
-      </Suspense>
-    </main>
+    <Suspense
+      fallback={
+        <AppPage tab="home" eyebrow="Padel Americano" title={<BallMark className="size-9" />}>
+          <Skeleton rows={4} />
+        </AppPage>
+      }
+    >
+      <HomeContent />
+    </Suspense>
   );
 }

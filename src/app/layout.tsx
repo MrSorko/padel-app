@@ -12,10 +12,11 @@ export const metadata: Metadata = {
   description: "Poäng och statistik för våra Americano-kvällar",
   applicationName: "Padel Americano",
   // Startad från hemskärmen på iPhone: helskärm utan Safaris adressfält.
+  // Statusraden blir genomskinlig med vit text ovanpå den blå sidhuvudet.
   appleWebApp: {
     capable: true,
     title: "Padel",
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
   },
   formatDetection: { telephone: false },
 };
@@ -23,7 +24,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#059669",
+  viewportFit: "cover",
+  themeColor: "#112c50",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
