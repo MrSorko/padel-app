@@ -48,3 +48,20 @@ Kör dem i **Supabase → SQL Editor** (klistra in en fil i taget och tryck *Run
 ```bash
 PGHOST=localhost PGUSER=postgres supabase/tests/run_local.sh
 ```
+
+## Spelsessioner (fas 3)
+
+- **Startsidan** visar pågående sessioner och de senaste avslutade.
+- **Starta ny session** (`/sessions/new`): välj de fyra spelarna (du själv måste vara med). Platserna A–D lottas och matcherna följer cykeln AB–CD, AC–BD, AD–BC.
+- **Sessionssidan** (`/sessions/<id>`): fyll i ett lags poäng för nästa match, det andra lagets blir 24 − x. Live-tabellen hämtas om var tionde sekund. Matcher kan ändras, och den senaste kan tas bort, tills sessionen avslutas.
+- **Avsluta session** sparar placering (`final_position`) och poäng (`total_points`) för varje spelare. Placeringen avgörs av poäng, sedan vunna matcher, och delas om det fortfarande är lika.
+
+Inga schemaändringar behövs för fas 3.
+
+## Tester
+
+```bash
+npm test
+```
+
+Enhetstesterna för rotation, poänginmatning och placering ligger i `src/lib/americano.test.ts`.
