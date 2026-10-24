@@ -10,6 +10,14 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   title: "Padel Americano",
   description: "Poäng och statistik för våra Americano-kvällar",
+  applicationName: "Padel Americano",
+  // Startad från hemskärmen på iPhone: helskärm utan Safaris adressfält.
+  appleWebApp: {
+    capable: true,
+    title: "Padel",
+    statusBarStyle: "default",
+  },
+  formatDetection: { telephone: false },
 };
 
 export const viewport: Viewport = {
