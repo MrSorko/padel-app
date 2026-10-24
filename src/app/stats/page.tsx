@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ChevronRightIcon } from "@/components/icons";
+import { AppPage, Avatar, EmptyState, ErrorText, PositionBadge, Skeleton } from "@/components/ui";
 import { formatDecimal, formatPercent } from "@/lib/format";
 import { loadFinishedSessions, loadProfiles } from "@/lib/history";
 import { requireUser } from "@/lib/sessions";
@@ -17,10 +19,14 @@ async function Leaderboard() {
       loadFinishedSessions(supabase),
     ]);
   } catch {
+    return <ErrorText>Kunde inte hämta statistiken. Ladda om sidan och försök igen.</ErrorText>;
+  }
+
+  if (sessions.length === 0) {
     return (
-      <p role="alert" className="mt-6 text-red-600 dark:text-red-400">
-        Kunde inte hämta statistiken. Ladda om sidan och försök igen.
-      </p>
+      <EmptyState>
+        Inga avslutade spelkvällar än. Statistiken räknas från avslutade spelkvällar.
+      </EmptyState>
     );
   }
 
@@ -34,68 +40,61 @@ async function Leaderboard() {
 
   return (
     <>
-      <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-        {sessions.length === 0
-          ? "Inga avslutade sessioner än. Statistiken räknas från avslutade sessioner."
-          : `Från ${sessions.length} avslutade ${sessions.length === 1 ? "session" : "sessioner"}. Tryck på en spelare för mer.`}
+      <p className="mb-3 px-1 text-sm text-muted">
+        Från {sessions.length} avslutade {sessions.length === 1 ? "spelkväll" : "spelkvällar"},
+        rankat på vinstprocent. Tryck på en spelare för mer.
       </p>
-
-      <table className="mt-4 w-full text-left tabular-nums">
-        <thead className="text-xs text-zinc-500">
-          <tr>
-            <th className="py-2 font-medium">Spelare</th>
-            <th className="px-1 py-2 text-right font-medium" title="Spelade matcher">
-              M
-            </th>
-            <th className="px-1 py-2 text-right font-medium">Vinst</th>
-            <th className="px-1 py-2 text-right font-medium" title="Poäng per match">
-              P/m
-            </th>
-            <th className="py-2 pl-1 text-right font-medium" title="Snittplacering">
-              Plac.
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-          {stats.map((s) => (
-            <tr key={s.playerId}>
-              <td className="py-3 font-medium">
-                <Link
-                  href={`/stats/${s.playerId}`}
-                  className="text-emerald-700 underline-offset-2 active:underline dark:text-emerald-400"
-                >
-                  {names.get(s.playerId) ?? "Okänd spelare"}
-                </Link>
-              </td>
-              <td className="px-1 py-3 text-right">{s.played}</td>
-              <td className="px-1 py-3 text-right font-semibold">{formatPercent(s.winRate)}</td>
-              <td className="px-1 py-3 text-right">{formatDecimal(s.avgPoints)}</td>
-              <td className="py-3 pl-1 text-right">{formatDecimal(s.avgPosition)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <Link
-        href="/history"
-        className="mt-8 rounded-lg border border-zinc-300 px-4 py-3 text-center text-base font-semibold active:bg-zinc-100 dark:border-zinc-700 dark:active:bg-zinc-800"
-      >
-        Visa historik
-      </Link>
+      <ol className="flex flex-col gap-2">
+        {stats.map((s, i) => {
+          const name = names.get(s.playerId) ?? "Okänd spelare";
+          return (
+            <li key={s.playerId}>
+              <Link
+                href={`/stats/${s.playerId}`}
+                className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3 pr-2 transition active:bg-surface-2"
+              >
+                <PositionBadge position={i + 1} />
+                <Avatar name={name} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="truncate font-bold">{name}</span>
+                    <span className="text-lg font-extrabold tabular-nums">
+                      {formatPercent(s.winRate)}
+                    </span>
+                  </div>
+                  <WinBar rate={s.winRate} />
+                  <p className="mt-1 text-xs text-muted tabular-nums">
+                    {s.played} matcher · {formatDecimal(s.avgPoints)} p/match · snittplats{" "}
+                    {formatDecimal(s.avgPosition)}
+                  </p>
+                </div>
+                <ChevronRightIcon className="size-5 shrink-0 text-muted" />
+              </Link>
+            </li>
+          );
+        })}
+      </ol>
     </>
+  );
+}
+
+function WinBar({ rate }: { rate: number | null }) {
+  return (
+    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-2">
+      <div
+        className="h-full rounded-full bg-ball-500"
+        style={{ width: `${Math.round((rate ?? 0) * 100)}%` }}
+      />
+    </div>
   );
 }
 
 export default function StatsPage() {
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-6 py-10">
-      <Link href="/" className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
-        ← Startsidan
-      </Link>
-      <h1 className="mt-4 text-2xl font-bold tracking-tight">Statistik</h1>
-      <Suspense fallback={<p className="mt-6 text-zinc-500">Hämtar statistik…</p>}>
+    <AppPage tab="stats" eyebrow="All tid" title="Statistik">
+      <Suspense fallback={<Skeleton rows={4} />}>
         <Leaderboard />
       </Suspense>
-    </main>
+    </AppPage>
   );
 }

@@ -1,6 +1,8 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { ShuffleIcon } from "@/components/icons";
+import { Avatar, buttonStyles, ErrorText } from "@/components/ui";
 import { startSession, type ActionState } from "../actions";
 
 const initialState: ActionState = { error: null };
@@ -25,52 +27,64 @@ export function StartSessionForm({
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 text-sm font-medium">Spelare ({selected.length} av 4)</legend>
+        <legend className="mb-2 flex w-full justify-between px-1 text-xs font-bold uppercase tracking-wider text-muted">
+          Spelare
+          <span className={selected.length === 4 ? "text-court-600 dark:text-ball-400" : ""}>
+            {selected.length} av 4
+          </span>
+        </legend>
         {profiles.map((p) => {
           const checked = selected.includes(p.id);
+          const full = !checked && selected.length >= 4;
           return (
             <label
               key={p.id}
-              className={`flex items-center gap-3 rounded-lg border px-4 py-3 text-base ${
+              className={`flex items-center gap-3 rounded-2xl border-2 bg-surface px-4 py-3 text-base font-semibold transition ${
                 checked
-                  ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950"
-                  : "border-zinc-300 dark:border-zinc-700"
-              }`}
+                  ? "border-court-500 dark:border-ball-400"
+                  : "border-line"
+              } ${full ? "opacity-50" : "active:scale-[0.99]"} has-focus-visible:ring-4 has-focus-visible:ring-court-500/30`}
             >
               <input
                 type="checkbox"
                 name="player"
                 value={p.id}
                 checked={checked}
-                disabled={!checked && selected.length >= 4}
+                disabled={full}
                 onChange={() => toggle(p.id)}
-                className="size-5 accent-emerald-600"
+                className="sr-only"
               />
-              {p.name}
-              {p.id === currentUserId && <span className="text-sm text-zinc-500">(du)</span>}
+              <Avatar name={p.name} />
+              <span className="flex-1">
+                {p.name}
+                {p.id === currentUserId && (
+                  <span className="ml-1.5 text-sm font-normal text-muted">(du)</span>
+                )}
+              </span>
+              <span
+                aria-hidden="true"
+                className={`flex size-7 items-center justify-center rounded-full border-2 text-sm transition ${
+                  checked
+                    ? "border-court-500 bg-court-500 text-white dark:border-ball-400 dark:bg-ball-400 dark:text-court-950"
+                    : "border-line"
+                }`}
+              >
+                {checked && "✓"}
+              </span>
             </label>
           );
         })}
       </fieldset>
 
       {!selected.includes(currentUserId) && (
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Du måste själv vara med för att kunna föra in poäng.
-        </p>
+        <p className="px-1 text-sm text-muted">Du måste själv vara med för att kunna föra in poäng.</p>
       )}
 
-      {state.error && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-          {state.error}
-        </p>
-      )}
+      {state.error && <ErrorText>{state.error}</ErrorText>}
 
-      <button
-        type="submit"
-        disabled={!ready || pending}
-        className="mt-2 rounded-lg bg-emerald-600 px-4 py-3 text-base font-semibold text-white active:bg-emerald-700 disabled:opacity-60"
-      >
-        {pending ? "Startar…" : "Starta session"}
+      <button type="submit" disabled={!ready || pending} className={`mt-2 ${buttonStyles.primary}`}>
+        <ShuffleIcon className="size-5" />
+        {pending ? "Lottar…" : "Lotta ordning och starta"}
       </button>
     </form>
   );
