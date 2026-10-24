@@ -66,6 +66,36 @@ Inga schemaändringar behövs för fas 3.
 
 Bara avslutade sessioner räknas, så statistiken ändras inte mitt under en kväll. Statistiken räknas fram i appen ur `matches` och `session_players` (`final_position`) och lagras inte separat. Inga schemaändringar behövs för fas 4.
 
+## PWA och deploy (fas 5)
+
+Appen har ett web manifest (`src/app/manifest.ts`), ikoner i `public/icons/` och en `apple-icon.png` för iPhone. Startad från hemskärmen öppnas den i helskärm (standalone) utan webbläsarens adressfält. Manifestet och ikonerna går att hämta utan inloggning, annars kan appen inte installeras.
+
+Appen har ingen service worker och fungerar därför inte offline. Det är med flit: allt hämtas från Supabase, och en cache skulle kunna visa gamla poäng.
+
+### Deploy till Vercel
+
+1. Logga in på [vercel.com](https://vercel.com) med GitHub och välj **Add New → Project**.
+2. Importera repot `MrSorko/padel-app`. Vercel känner igen Next.js, så byggkommando och mapp behöver inte ändras.
+3. Under **Environment Variables**, lägg till samma två variabler som i `.env.local`:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+4. Tryck **Deploy**. Efter en minut får appen en adress, t.ex. `https://padel-app-xxxx.vercel.app`.
+5. Varje push till `main` deployas sedan automatiskt.
+
+Ändras en miljövariabel i Vercel måste appen deployas om (**Deployments → … → Redeploy**) innan ändringen gäller.
+
+### Supabase efter deploy
+
+Under **Authentication → URL Configuration**:
+
+- **Site URL**: den deployade adressen, t.ex. `https://padel-app-xxxx.vercel.app`. Länkar i inbjudningar och lösenordsmejl pekar hit.
+- **Redirect URLs**: lägg till `https://padel-app-xxxx.vercel.app/**` och gärna `http://localhost:3000/**` för utveckling.
+
+### Installera på mobilen
+
+- **iPhone (Safari)**: öppna adressen, tryck på dela-knappen och välj **Lägg till på hemskärmen**.
+- **Android (Chrome)**: öppna adressen, tryck på menyn (⋮) och välj **Installera app** eller **Lägg till på startskärmen**.
+
 ## Tester
 
 ```bash
