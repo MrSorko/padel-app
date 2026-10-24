@@ -51,7 +51,6 @@ async function SessionView({ params }: { params: Promise<{ id: string }> }) {
             Fyll i ett lags poäng, det andra räknas ut (24 totalt).
           </p>
           <ScoreForm
-            key={next.matchNumber}
             action={recordMatch.bind(null, session.id, next.matchNumber)}
             team1Label={team(next.team1)}
             team2Label={team(next.team2)}

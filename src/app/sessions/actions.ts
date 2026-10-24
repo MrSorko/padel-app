@@ -7,7 +7,8 @@ import type { PostgrestError } from "@supabase/supabase-js";
 import { assignSlots, parseScore, SLOTS } from "@/lib/americano";
 import { loadSession, requireUser } from "@/lib/sessions";
 
-export type ActionState = { error: string | null };
+/** `stale` betyder att någon annan hann före och att formuläret ska tömmas. */
+export type ActionState = { error: string | null; stale?: boolean };
 
 const OK: ActionState = { error: null };
 
@@ -17,6 +18,10 @@ function dbError(error: PostgrestError, what: string): ActionState {
   }
   console.error(`${what} misslyckades:`, error);
   return { error: `${what} misslyckades. Kontrollera anslutningen och försök igen.` };
+}
+
+function alreadyRegistered(matchNumber: number) {
+  return `Någon annan hann registrera match ${matchNumber}. Tabellen har uppdaterats, kontrollera resultatet.`;
 }
 
 export async function startSession(
@@ -71,7 +76,7 @@ export async function recordMatch(
   // Skyddar mot att två telefoner registrerar samma match samtidigt.
   if (session.nextMatch.matchNumber !== matchNumber) {
     refresh();
-    return { error: `Match ${matchNumber} är redan registrerad. Tabellen har uppdaterats.` };
+    return { error: alreadyRegistered(matchNumber), stale: true };
   }
 
   const { team1, team2 } = session.nextMatch;
@@ -87,7 +92,7 @@ export async function recordMatch(
   });
   if (error?.code === "23505") {
     refresh();
-    return { error: `Match ${matchNumber} är redan registrerad. Tabellen har uppdaterats.` };
+    return { error: alreadyRegistered(matchNumber), stale: true };
   }
   if (error) return dbError(error, "Att spara matchen");
 

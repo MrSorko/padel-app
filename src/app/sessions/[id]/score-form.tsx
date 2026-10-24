@@ -42,11 +42,11 @@ export function ScoreForm({
   const [state, formAction, pending] = useActionState(
     async (prev: ActionState, formData: FormData) => {
       const result = await action(prev, formData);
-      if (!result.error) {
+      if (!result.error || result.stale) {
         setTeam1("");
         setTeam2("");
-        onSaved?.();
       }
+      if (!result.error) onSaved?.();
       return result;
     },
     initialState,
